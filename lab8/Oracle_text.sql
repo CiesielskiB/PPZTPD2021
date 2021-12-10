@@ -1,0 +1,224 @@
+--zad1
+CREATE TABLE CYTATY AS
+SELECT * FROM ZSBD_TOOLS.cytaty;
+
+--zad2
+SELECT AUTOR, TEKST
+FROM CYTATY
+WHERE lower(TEKST) LIKE '%pesymista%' AND lower(TEKST) LIKE '%optymista%';
+
+--zad3
+create index CYTATY_INDEX on CYTATY(TEKST)
+indextype is CTXSYS.CONTEXT;
+
+--zad4
+SELECT AUTOR, TEKST
+FROM CYTATY
+WHERE CONTAINS(lower(TEKST), 'pesymista') > 0 AND CONTAINS(lower(TEKST),'optymista') > 0;
+
+--zad5
+SELECT AUTOR, TEKST
+FROM CYTATY
+WHERE CONTAINS(lower(TEKST), 'pesymista ~ optymista') > 0;
+
+--zad6
+SELECT AUTOR, TEKST
+FROM CYTATY
+WHERE CONTAINS(lower(TEKST), 'near((pesymista, optymista), 3)') > 0;
+
+--zad7
+SELECT AUTOR, TEKST
+FROM CYTATY
+WHERE CONTAINS(lower(TEKST), 'near((pesymista, optymista), 10)') > 0;
+
+--zad8
+SELECT AUTOR, TEKST
+FROM CYTATY
+WHERE CONTAINS(lower(TEKST), '?yci%') > 0;
+
+--zad9
+SELECT AUTOR, TEKST, SCORE(1)
+FROM CYTATY
+WHERE CONTAINS(TEKST, '?yci%', 1) > 0;
+
+--zad10
+SELECT AUTOR, TEKST, SCORE(1) AS DOPASOWANIE
+FROM CYTATY
+WHERE CONTAINS(TEKST, '?yci%', 1) > 0
+ORDER BY DOPASOWANIE DESC
+FETCH FIRST 1 ROW ONLY;
+
+--zad11
+SELECT AUTOR, TEKST
+FROM CYTATY
+WHERE CONTAINS(TEKST, 'fuzzy(probelm,,,N)') > 0;
+
+--zad12
+INSERT INTO CYTATY VALUES(39, 'Bertrand Russell', 'To smutne, ?e g?upcy s? tacy pewni siebie, a ludzie rozs?dni tacy pe?ni w?tpliwo?ci');
+COMMIT;
+
+--zad13
+SELECT AUTOR, TEKST
+FROM CYTATY
+WHERE CONTAINS(TEKST, 'g?upcy') > 0;
+
+-- nie ma informacji w indeksie o nowym wierszu
+
+--zad14
+SELECT *
+FROM DR$CYTATY_IDX$I;
+
+SELECT *
+FROM DR$CYTATY_IDX$I
+WHERE TOKEN_TEXT = 'G?UPCY';
+
+--zad15
+DROP INDEX CYTATY_IDX;
+
+CREATE INDEX CYTATY_IDX ON CYTATY(TEKST) INDEXTYPE IS CTXSYS.CONTEXT;
+
+--zad16
+SELECT *
+FROM DR$CYTATY_IDX$I
+WHERE TOKEN_TEXT = 'G?UPCY';
+
+SELECT AUTOR, TEKST
+FROM CYTATY
+WHERE CONTAINS(TEKST, 'g?upcy') > 0;
+
+--zad17
+DROP INDEX CYTATY_IDX;
+DROP TABLE CYTATY;
+
+
+
+--Zaawansowane indeksowanie i wyszukiwanie
+--zad1
+CREATE TABLE QUOTES AS
+SELECT * FROM ZSBD_TOOLS.quotes;
+
+--zad2
+CREATE INDEX QUOTES_IDX ON QUOTES(TEXT) INDEXTYPE IS CTXSYS.CONTEXT;
+
+--zad3
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, 'work') > 0;
+
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, '$work') > 0;
+
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, 'working') > 0;
+
+
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, '$working') > 0;
+
+--zad4
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, 'it') > 0;
+
+--Powodem jest slowko 'it', nale?y ono do stoplisty, która nie podlega indeksacji
+
+--zad5
+SELECT *
+FROM CTX_STOPLISTS;
+
+--u?ylo DEFAULT_STOPLIST
+
+--zad5
+SELECT *
+FROM CTX_STOPWORDS;
+
+--zad6
+DROP INDEX QUOTES_IDX;
+
+CREATE INDEX QUOTES_IDX ON QUOTES(TEXT) INDEXTYPE IS CTXSYS.CONTEXT PARAMETERS ('stoplist CTXSYS.EMPTY_STOPLIST');
+
+--zad7
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, 'it') > 0;
+
+
+--zad8
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, 'fool and humans') > 0;
+
+--zad10
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, 'fool and computer') > 0;
+
+--zad11
+SELECT AUTHOR, TEXT
+FROM QUOTES
+WHERE CONTAINS(TEXT, '(FOOL AND COMPUTER) WITHIN SENTENCE', 1) > 0;
+
+--SENTENCE nie bylo dodane do grupy sekcji
+
+--zad12
+DROP INDEX QUOTES_IDX;
+
+--zad13
+BEGIN
+    CTX_DDL.CREATE_SECTION_GROUP('nullgroup', 'NULL_SECTION_GROUP');
+    CTX_DDL.ADD_SPECIAL_SECTION('nullgroup', 'SENTENCE');
+    CTX_DDL.ADD_SPECIAL_SECTION('nullgroup', 'PARAGRAPH');
+END;
+
+--zad14
+CREATE INDEX QUOTES_IDX ON QUOTES(TEXT) INDEXTYPE IS CTXSYS.CONTEXT PARAMETERS ('stoplist CTXSYS.EMPTY_STOPLIST section group nullgroup');
+
+--zad15
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, '(fool and humans) WITHIN SENTENCE') > 0;
+
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, '(fool and computer) WITHIN SENTENCE') > 0;
+
+--zad16
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, 'humans') > 0;
+
+--Przy tworzeniu indeksu nie zdefiniowali?my odpowiedniego lexera, który potraktowa?by znak niealfanumeryczny jako znak alfanumeryczny
+
+--zad17
+DROP INDEX QUOTES_IDX;
+
+BEGIN
+    CTX_DDL.CREATE_PREFERENCE('lex_z_m', 'BASIC_LEXER');
+    CTX_DDL.SET_ATTRIBUTE('lex_z_m', 'printjoins', '-');
+    CTX_DDL.SET_ATTRIBUTE('lex_z_m', 'index_text', 'YES');
+END;
+
+CREATE INDEX QUOTES_IDX ON QUOTES(TEXT) INDEXTYPE IS CTXSYS.CONTEXT PARAMETERS ('stoplist CTXSYS.EMPTY_STOPLIST section group nullgroup LEXER lex_z_m');
+
+--zad18
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, 'humans') > 0;
+
+--nie zwróci?o cytatów zawieraj?cych 'non-humans'
+
+--zad19
+SELECT *
+FROM QUOTES
+WHERE CONTAINS(TEXT, 'non\-humans') > 0;
+
+--zad20
+BEGIN
+    CTX_DDL.DROP_PREFERENCE('lex_z_m');
+    CTX_DDL.DROP_SECTION_GROUP('nullgroup');
+END;
+
+DROP TABLE QUOTES;
