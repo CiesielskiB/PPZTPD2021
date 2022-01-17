@@ -1,0 +1,34 @@
+zad24
+select irstream spolka as X, kursOtwarcia as Y " +
+                        "from KursAkcji.win:length(3) " +
+                        "where spolka = 'Oracle'
+Klauzula WHERE nie ogranicza zdarzeń, które są wykorzystywane do stworzenia okna,
+aplikowana jest dopiero przy filtrowaniu zdarzeń w strumieniu zdarzeń wstawianych i usuwanych
+
+zad25
+select irstream data, spolka as X, kursOtwarcia as Y " +
+                        "from KursAkcji.win:length(3) " +
+                        "where spolka = 'Oracle'
+zad26
+"select irstream data, spolka as X, kursOtwarcia as Y " +
+                       "from KursAkcji(spolka='Oracle').win:length(3)"
+zad27
+"select istream data, spolka as X, kursOtwarcia as Y " +
+                       "from KursAkcji(spolka='Oracle').win:length(3)"
+
+zad28
+"select istream data, spolka as X, max(kursOtwarcia) as Y " +
+                       "from KursAkcji(spolka='Oracle').win:length(5)"
+zad29
+"select istream data, spolka, kursOtwarcia - max(kursOtwarcia) as roznica" +
+                        "from KursAkcji(spolka='Oracle').win:length(5)"
+Funkcja max oblicza maksimum dla okna,
+max w sql oblicza wartości max danej kolumny dla grupy lub po prostu z kolumny jak nie ma grup.
+
+zad30
+
+"select istream data, spolka, kursOtwarcia - min(kursOtwarcia) AS roznica " +
+"from KursAkcji(spolka='Oracle').win:length(2) " +
+"having kursOtwarcia - min(kursOtwarcia) > 0"
+
+Wygląda na to że autentycznie znalazło tylko wzrosty.

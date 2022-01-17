@@ -1,0 +1,50 @@
+zad4a
+Zdarzenia rstrem zostały wygenerowane tak późno, ponieważ dopiero gdy do systemu trafiło zdarzenie z datą 17.09,
+to spowodowało one, że zdarzenia z datą wcześniejszą jak 11.09 musiały zostać usunięte z okna, gdyż nie mieściły się w zadanym limicie czasowym 7 dni
+
+zad4b
+Pierwsza porcja batcha zawierała zdarzenia z okresu 05.09-11.09 i została zarejestrowana w oknie w momencie pojawienia się zdarzenia z datą 17.09.
+Druga porcja batcha zawierała zdarzenia z okresu 12.09-18.09 i została zarejestrowana w oknie w momencie pojawienia się zdarzenia z datą 19.09.
+Trzecia porcja batcha zawierała zdarzenia z okresu 19.09-25.09, ale niestety nie została zarejestrowana w oknie,
+ponieważ w systmie nie pojawiło się żadne zdarzenie z datą późniejszą jak 25.09, co tłumaczy brak reszty zdarzeń istream
+
+Zdarzenia rstrem zostały zarejestrowane tylko dla pierwszej porcji batcha, ponieważ trzecia porcja batcha nie trafiła nawet do okna, a druga porcja cały czas się w tym oknie znajduje i będzie się znajdować do momentu, gdy pojawi się wspomniana trzecia porcja, co tłumaczy brak reszty zdarzeń rstrem
+
+zad5
+"select istream data, kursZamkniecia, spolka, max(kursZamkniecia) - kursZamkniecia as roznica from KursAkcji.win:ext_timed_batch(data.getTime(), 1 day)"
+
+zad6
+"select istream data, kursZamkniecia, spolka, max(kursZamkniecia) - kursZamkniecia as roznica from KursAkcji(spolka in ('IBM', 'Honda', 'Microsoft')).win:ext_timed_batch(data.getTime(), 1 day)"
+
+zad7a
+"select istream data, kursZamkniecia, kursOtwarcia, spolka from KursAkcji(kursZamkniecia > kursOtwarcia).win:length(1)"
+
+zad7b
+"select istream data, kursZamkniecia, kursOtwarcia, spolka from KursAkcji(KursAkcji.roznicaKursow(kursOtwarcia, kursZamkniecia) > 0).win:length(1)"
+
+zad8
+"select istream data, kursZamkniecia, spolka, max(kursZamkniecia) - kursZamkniecia as roznica from KursAkcji(spolka in ('CocaCola', 'PepsiCo')).win:ext_timed(data.getTime(), 7 days)"
+
+zad9
+"select istream data, kursZamkniecia, spolka, max(kursZamkniecia) - kursZamkniecia as roznica from KursAkcji(spolka in ('CocaCola', 'PepsiCo')).win:ext_timed_batch(data.getTime(), 1 day) having max(kursZamkniecia) = kursZamkniecia"
+
+zad10
+"select istream max(kursZamkniecia) as maksimum from KursAkcji.win:ext_timed_batch(data.getTime(), 7 days)"
+
+zad11
+"select k.kursZamkniecia as kursCoc, p.data, p.kursZamkniecia as kursPep from KursAkcji(spolka='PepsiCo').win:length(1) as p full outer join KursAkcji(spolka='CocaCola').win:length(1) as k on p.data = k.data where p.kursZamkniecia > k.kursZamkniecia"
+
+zad12
+"select k.data, k.kursZamkniecia as kursBiezacy, k.spolka, k.kursZamkniecia - a.kursZamkniecia as roznica from KursAkcji(spolka in ('PepsiCo', 'CocaCola')).win:length(1) as k join KursAkcji(spolka in ('PepsiCo', 'CocaCola')).std:firstunique(spolka) as a on k.spolka = a.spolka"
+
+zad13
+"select k.data, k.kursZamkniecia as kursBiezacy, k.spolka, k.kursZamkniecia - a.kursZamkniecia as roznica from KursAkcji.win:length(1) as k join KursAkcji.std:firstunique(spolka) as a on k.spolka = a.spolka where k.kursZamkniecia > a.kursZamkniecia"
+
+zad14
+"select k.data as dataB, a.data as dataA, k.spolka, a.kursOtwarcia as kursA, k.kursOtwarcia as kursB  from KursAkcji.win:ext_timed(data.getTime(), 7 days) as k join KursAkcji.win:ext_timed(data.getTime(), 7 days) as a on k.spolka = a.spolka where k.kursOtwarcia - a.kursOtwarcia > 3"
+
+zad15
+"select data, spolka, obrot from KursAkcji(market='NYSE').win:ext_timed_batch(data.getTime(), 7 days) order by obrot desc limit 3"
+
+zad16
+"select data, spolka, obrot from KursAkcji(market='NYSE').win:ext_timed_batch(data.getTime(), 7 days) order by obrot desc limit 1 offset 2"
